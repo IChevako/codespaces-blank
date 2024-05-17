@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+playwright
+nltk
+scikit-learn
+wordsegment
+SPARQLWrapper
+google-generativeai
+jinja2
+spacy==3.7.3
+cachetools
+pyasn1-modules
+rsa
+Pedantic
+markdown2
+IPython
+https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1.tar.gz

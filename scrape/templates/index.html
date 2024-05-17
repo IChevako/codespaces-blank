@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ROBOT COPYWRITER</title>
+        <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed">
+        <style>
+          body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #eee;
+          }
+          .mdc-text-field {
+            width: 100%;
+            margin-bottom: 20px;
+          }
+          .container {
+            max-width: 100%;
+            margin: 50px auto;
+            padding: 50px;
+            border-radius: 5px;
+            text-align: left;
+          }
+          .heading_block {
+            background-color: black;
+            border-radius: 5px;
+            color: white;
+            padding: 40px;
+            margin-bottom: 30px;
+          }
+          .head_text {
+            font-size: 40px;
+          }
+          .mdc-text-field__input:focus + .mdc-floating-label,
+          .mdc-text-field__input:not(:placeholder-shown) + .mdc-floating-label {
+            opacity: 0 !important;
+            transform: translateY(-100%) !important;
+          }
+          .button-container {
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            margin-top: 20px;
+          }
+          .mdc-button--raised:not(:disabled) {
+            color: #fff;
+            background-color: #6200ea;
+          }
+          .mdc-button--raised:disabled {
+            color: #aaa;
+            background-color: #eee;
+          }
+          .progress-bar-container {
+            position: relative;
+            margin-top: 20px;
+          }
+          .progress-bar {
+            display: none;
+            width: 0;
+            height: 5px;
+            background-color: #6200ea;
+            transition: width 2s ease;
+          }
+          .loading-spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6200ea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .error-message {
+            color: red;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+      <div class="container">
+        <div class="heading_block">
+          <h1 class="head_text">ROBOT COPYWRITER</h1>
+          <p>This tool uses either a URL or a set of keywords to dynamically generate Google Ads responsive search ad copy. Please wait 10-15 seconds. AI isn't perfect so you may have to submit multiple times to get the desired number of working ad copy variants. This tool is in BETA and all sites may not work.</p>
+        </div>
+        <form id="analysis-form">
+          <div class="mdc-text-field mdc-text-field--outlined">
+            <input type="text" id="url_or_keywords" class="mdc-text-field__input" required>
+            <div class="mdc-notched-outline">
+              <div class="mdc-notched-outline__leading"></div>
+              <div class="mdc-notched-outline__notch">
+                <label for="url_or_keywords" class="mdc-floating-label">Enter a URL or comma-separated keywords</label>
+              </div>
+              <div class="mdc-notched-outline__trailing"></div>
+            </div>
+          </div>
+          <div class="mdc-text-field mdc-text-field--outlined">
+            <input type="text" id="brand_voice" class="mdc-text-field__input">
+            <div class="mdc-notched-outline">
+              <div class="mdc-notched-outline__leading"></div>
+              <div class="mdc-notched-outline__notch">
+                <label for="brand_voice" class="mdc-floating-label">(Optional) Describe your brand voice in one sentence or a few keywords</label>
+              </div>
+              <div class="mdc-notched-outline__trailing"></div>
+            </div>
+          </div>
+          <div class="button-container">
+            <button type="submit" class="mdc-button mdc-button--raised">Generate Copy</button>
+          </div>
+          <div class="loading-spinner" id="loading-spinner"></div>
+          <div class="error-message" id="error-message"></div>
+        </form>
+
+        <div id="results" style="display: none;">
+          <h3 class="nopad"><strong>Top Themes</strong></h3>
+          <ul id="top-themes"></ul>
+          <h3>Headlines</h3>
+          <ul id="ad-headlines"></ul>
+          <h3>Descriptions</h3>
+          <ul id="ad-descriptions"></ul>
+        </div>
+      </div>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+      <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('analysis-form');
+    const textFields = document.querySelectorAll('.mdc-text-field');
+    textFields.forEach((textField) => {
+        mdc.textField.MDCTextField.attachTo(textField);
+    });
+
+    form.onsubmit = async function(event) {
+    event.preventDefault();
+
+    const urlOrKeywordsInput = document.getElementById('url_or_keywords');
+    const brandVoiceInput = document.getElementById('brand_voice');
+    const errorMessageElement = document.getElementById('error-message');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const includePerformanceAnalysisCheckbox = document.getElementById('include-performance-analysis');
+
+    if (!urlOrKeywordsInput.checkValidity()) {
+        urlOrKeywordsInput.reportValidity();
+        return;
+    }
+
+    loadingSpinner.style.display = 'block';  // Show the loading spinner
+
+    try {
+        const response = await fetch('/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url_or_keywords: urlOrKeywordsInput.value,
+                brand_voice: brandVoiceInput.value,
+                include_performance_analysis: includePerformanceAnalysisCheckbox.checked
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Server responded with ' + response.status);
+        }
+
+        const result = await response.json();
+        displayResults(result);
+        errorMessageElement.textContent = '';  // Clear any error messages
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        loadingSpinner.style.display = 'none';  // Hide the loading spinner
+    }
+};
+
+    function displayResults(result) {
+        const topThemesElement = document.getElementById('top-themes');
+        const adHeadlinesElement = document.getElementById('ad-headlines');
+        const adDescriptionsElement = document.getElementById('ad-descriptions');
+
+        topThemesElement.innerHTML = '';
+        adHeadlinesElement.innerHTML = '';
+        adDescriptionsElement.innerHTML = '';
+
+        // Parsing themes
+        if (result.top_themes_text) {
+            populateList(result.top_themes_text, topThemesElement);
+        }
+
+        // Parsing ad copy to extract headlines and descriptions
+        if (result.ad_copy) {
+            const headlinesMatch = result.ad_copy.match(/ad_headlines = \[(.*?)\]/s);
+            const descriptionsMatch = result.ad_copy.match(/ad_descriptions = \[(.*?)\]/s);
+
+            if (headlinesMatch) {
+                populateList(headlinesMatch[1].split('/').map(text => text.trim().replace(/^"|"$/g, '')), adHeadlinesElement, true);
+            }
+
+            if (descriptionsMatch) {
+                populateList(descriptionsMatch[1].split('/').map(text => text.trim().replace(/^"|"$/g, '')), adDescriptionsElement, true);
+            }
+        }
+
+        document.getElementById('results').style.display = 'block';  // Make sure to display results
+    }
+
+    function populateList(items, element, includeLength = false) {
+    items.forEach(item => {
+        // Remove special characters before the first English letter
+        let cleanedText = item.replace(/^[^a-zA-Z]+/, '');
+        
+        // Replace "\" with "'" only for the Top Themes section
+        if (element.id === 'top-themes') {
+            cleanedText = cleanedText.replace(/\\/g, "'");
+        }
+        
+        // Trim and check if the item is non-empty
+        const trimmedText = cleanedText.trim();
+        if (trimmedText.length > 0) { 
+            const listItem = document.createElement('li');
+            listItem.textContent = trimmedText + (includeLength ? ` (${trimmedText.length} characters)` : '');
+            element.appendChild(listItem);
+        }
+    });
+}
+
+    function sanitizeHTML(text) {
+        const element = document.createElement('div');
+        element.innerText = text;
+        return element.innerHTML;
+    }
+
+    function showError(message) {
+        const errorMessageElement = document.getElementById('error-message');
+        errorMessageElement.textContent = message;
+    }
+});
+      </script>
+      </body>
+      </html>
